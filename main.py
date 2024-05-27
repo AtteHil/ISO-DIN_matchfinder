@@ -4,23 +4,24 @@ import pandas as pd
 from PIL import Image
 
 class CSVHandler:
-    def find_match(string):
+    def find_match(string): # find matching strings
         matches = []
         with open('ISO-DIN_data.csv', 'r') as file:
             reader = csv.reader(file)
             for row in reader:
-                if str(row[0]) == string or str(row[1])==string:
+                if  string in str(row[0])or string in str(row[1]):
                     matches.append(CSVHandler.textToReadable(row))
         
         return matches
-    def find_all():
+    def find_all(): # find everything from file
         matches = []
         with open('ISO-DIN_data.csv', 'r') as file:
             reader = csv.reader(file)
             for row in reader:
                 matches.append(CSVHandler.textToReadable(row))
         return matches
-    def textToReadable(row):
+    def textToReadable(row): # print used for every row to textfield
+        
         return (
         f"""
         {row[0]} | {row[1]}
@@ -33,7 +34,7 @@ class CSVHandler:
 
 
 class SimpleApp:
-    def __init__(self, master):
+    def __init__(self, master): ## Initialize application and set fields
         self.master = master
         self.master.geometry("500x500")
         self.master.title("ISO-DIN Finder")
@@ -46,6 +47,7 @@ class SimpleApp:
         self.label.grid(row=0,column=2,sticky="w",pady=10,padx=10)
 
         self.entry = ctk.CTkEntry(self.master, placeholder_text="Type here...")
+        self.entry.bind("<Return>", self.on_find)
         self.entry.grid(row=0, column=3,pady=10)
 
         self.button = ctk.CTkButton(self.master, text="Find", command=self.on_find)
@@ -59,7 +61,7 @@ class SimpleApp:
         self.moreButton.grid(row=0, column=5)
         
         
-    def on_find(self):
+    def on_find(self, event=None): # event None so Enter or <Return> key press works 
         entered_text = self.entry.get()
         matches =CSVHandler.find_match(entered_text)
         self.text_box_write(matches)
@@ -80,7 +82,7 @@ class SimpleApp:
             self.textbox.insert("end", "No matching ISO or DIN was found. Check your number.\nIf it should exist you can add it from top right corner")
             self.textbox.configure(state="disabled")
 
-    def on_settings_click(self):
+    def on_settings_click(self): # open popup where user can delete or add new lines to file
         popup = ctk.CTkToplevel(self.master)
         popup.geometry("350x250")
         popup.title("modify data")
@@ -103,7 +105,7 @@ class SimpleApp:
         delete_button.grid(row=2, column=1,pady=10 ,padx=2)
         
     
-    def on_add(self, ISO_string, DIN_string, result_label):
+    def on_add(self, ISO_string, DIN_string, result_label): 
         if ISO_string and DIN_string and ISO_string.startswith("ISO ") and DIN_string.startswith("DIN "):  # Ensure both entries are not empty
             with open('ISO-DIN_data.csv', 'a', newline='') as file:
                 writer = csv.writer(file)
@@ -112,27 +114,26 @@ class SimpleApp:
         else:
             result_label.configure(text="Failed to add item. Ensure both fields are filled correctly.")
     
-    def on_delete(self, ISO_string, DIN_string, result_label):
-        if ISO_string and DIN_string and ISO_string.startswith("ISO ") and DIN_string.startswith("DIN "):  
+    def on_delete(self, ISO_string, DIN_string, result_label): # Delete line from file if found
+         
         
-            df = pd.read_csv('ISO-DIN_data.csv')
+        df = pd.read_csv('ISO-DIN_data.csv')
 
-            # Check if the entry exists
-            entry_exists = ((df['ISO'] == ISO_string) & (df['DIN'] == DIN_string)).any()
+        # Check if the entry exists
+        entry_exists = ((df['ISO'] == ISO_string) & (df['DIN'] == DIN_string)).any()
 
-            if entry_exists:
-                # Filter out the row that matches the given ISO and DIN pair
-                df = df[~((df['ISO'] == ISO_string) & (df['DIN'] == DIN_string))]
+        if entry_exists:
+            # Filter out the row that matches the given ISO and DIN pair
+            df = df[~((df['ISO'] == ISO_string) & (df['DIN'] == DIN_string))]
 
-                # Write the updated DataFrame back to the CSV file
-                df.to_csv('ISO-DIN_data.csv', index=False)
-                result_label.configure(text="Item deleted successfully")
-                
-            else:
-                result_label.configure(text="Item not found.")
+            # Write the updated DataFrame back to the CSV file
+            df.to_csv('ISO-DIN_data.csv', index=False)
+            result_label.configure(text="Item deleted successfully")
             
         else:
-            result_label.configure(text="Failed to delete item. Ensure both fields are filled correctly.")
+            result_label.configure(text="Item not found.")
+            
+        
         
 
 if __name__ == "__main__":
